@@ -1,14 +1,19 @@
+var http = require('http');
+var https = require('https');
+var fs = require('fs');
 var express = require('express');
 var bodyParser = require('body-parser');
 var db = require('./mysql');
 var app = express();
 
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/www.evtalk.kr/privkey.pem', 'utf-8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/www.evtalk.kr/cert.pem', 'utf-8');
+const ca = fs.readFileSync('/etc/letsencrypt/live/www.evtalk.kr/fullchain.pem', 'utf8');
+
+const credentials = { key: privateKey, cert: certificate, ca: ca};
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
-
-app.listen(80, () => {
-  console.log('--start index.js--');
-});
 
 app.get('/', (req, res) => {
 	console.log('서버 접속 완료');
@@ -66,6 +71,38 @@ app.put(`/userInfo/update/:id`, (req, res) => {
 	});
 });
 
+app.put(`/userInfo/update/membership/:id`, (req, res) => {
+	var sqlDelete = `DELETE FROM membership_list WHERE user_id=${req.params.id}`;
+	db.query(sqlDelete, (err, result) => {});
+	var sql = 'INSERT INTO membership_list(user_id, membership_id) VALUES (?, ?)'
+	for(var i = 0; i < req.body.length; i++) {
+		var params = [req.params.id, req.body[i].id];
+		db.query(sql, params, (err, result) => { });
+	}
+});
+
+app.put(`/userInfo/update/payment/:id`, (req, res) => {
+	var sqlDelete = `DELETE FROM payment_list WHERE user_id=${req.params.id}`;
+	db.query(sqlDelete, (err, result) => {});
+	var sql = 'INSERT INTO payment_list(user_id, payment_id) VALUES (?, ?)'
+	for(var i = 0; i < req.body.length; i++) {
+		var params = [req.params.id, req.body[i].id];
+		db.query(sql, params, (err, result) => { });
+	}
+});
+
+app.put(`/userInfo/update/car/:id`, (req, res) => {
+	var sql = 'UPDATE user SET car_id = (SELECT id FROM car WHERE vehicle_type = ?) WHERE id = ?';
+	var params = [req.body.vehicle_type, req.params.id];
+	db.query(sql, params, (err, result) => {
+		if(err) res.send(err);
+		else {
+			var sql2 = `SELECT * FROM car WHERE id=(SELECT car_id FROM user WHERE id=${req.params.id})`;
+			db.query(sql2, (err2, result2) => { res.json(result2[0]); });
+		}
+	});
+});
+
 app.delete(`/delete/:id`, (req, res) => {
 	console.log(`${req.params.id} 회원을 삭제합니다`);
 	var sql = `DELETE FROM user WHERE id = ${req.params.id}`;
@@ -97,9 +134,9 @@ app.get(`/userInfo/car`, (req, res) => {
 app.get('/userInfo/membership', (req, res) => {
 	console.log('멤버십 카드 정보 전송...');
 	var id = req.query.id;
-	var sql = `SELECT membership.id, card_name, image FROM membership_list INNER JOIN membership on membership_id=membership.id WHERE user_id = ${id}`;
+	var sql = `SELECT membership.id as id, card_name, image FROM membership_list INNER JOIN membership on membership_id=membership.id WHERE user_id = ${id}`;
 	db.query(sql, (err, result) => {
-		if(err) res.json('회원 카드 정보 전송 실패');
+		if(err) console.log('회원 카드 정보 전송 실패');
 		else res.json(result);
 	});
 });
@@ -107,10 +144,40 @@ app.get('/userInfo/membership', (req, res) => {
 app.get('/userInfo/payment', (req, res) => {
 	console.log('결제 카드 정보 전송...');
 	var id = req.query.id;
-	var sql = `SELECT payment_id, card_name, image FROM payment_list INNER JOIN payment on payment_id=payment.id WHERE user_id = ${id}`;
+	var sql = `SELECT payment_id as id, card_name, image FROM payment_list INNER JOIN payment on payment_id=payment.id WHERE user_id = ${id}`;
 	db.query(sql, (err, result) => {
-		if(err) res.json('결제 카드 정보 전송 실패');
+		if(err) console.log('결제 카드 정보 전송 실패');
 		else res.json(result);
 	});
 });
 
+app.get('/info/membership_list', (req, res) => {
+	var sql = 'SELECT * FROM membership';
+	db.query(sql, (err, result) => {
+		if(err) res.json(err);
+		else res.json(result);
+	});
+});
+
+app.get('/info/payment_list', (req, res) => {
+	var sql = 'SELECT * FROM payment';
+	db.query(sql, (err, result) => {
+		if(err) res.json(err);
+		else res.json(result);
+	});
+});
+
+app.get('/info/car_list', (req, res) => {
+	var sql = 'SELECT enterprise, vehicle_type, image FROM car';
+	db.query(sql, (err, result) => {
+		if(err) res.json(err);
+		else res.json(result);
+	});
+});
+
+http.createServer(app).listen(80, () => {
+	console.log('http server running on port 80');
+});
+https.createServer(credentials, app).listen(443, () => {
+	console.log('https server running on port 443');
+});
