@@ -17,6 +17,9 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 app.get('/', (req, res) => {
 	console.log('서버 접속 완료');
+	for(var i = 0; i < 10; i++) {
+		res.json(i + ' ');
+	}
 	res.json('성공');
 });
 
@@ -174,6 +177,21 @@ app.get('/info/car_list', (req, res) => {
 		else res.json(result);
 	});
 });
+
+app.get('/getChargingFee', (req, res) => {
+	var non_member = 'SELECT busiId, non_member FROM membership_fee';
+	db.query(non_member, (err1, result1) => {
+		if(err1) res.json(err1);
+		else {
+			var membership = 'SELECT membership_id FROM membership_list WHERE  user_id = ?';
+			db.query(membership, (err2, result2) => {
+				for(var i = 0; i < result2.length; i++) {
+					
+				}
+			})
+		}
+	})
+})
 
 http.createServer(app).listen(80, () => {
 	console.log('http server running on port 80');
