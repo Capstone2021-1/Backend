@@ -17,6 +17,9 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 app.get('/', (req, res) => {
 	console.log('서버 접속 완료');
+	for(var i = 0; i < 10; i++) {
+		res.json(i + ' ');
+	}
 	res.json('성공');
 });
 
