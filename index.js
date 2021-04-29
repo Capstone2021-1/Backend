@@ -186,7 +186,7 @@ app.get('/getChargingFee', (req, res) => {
 			var membership = 'SELECT membership_id FROM membership_list WHERE  user_id = ?';
 			db.query(membership, (err2, result2) => {
 				for(var i = 0; i < result2.length; i++) {
-					
+					res.json(i);
 				}
 			})
 		}
