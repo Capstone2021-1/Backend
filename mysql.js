@@ -5,7 +5,8 @@ var db = mysql.createConnection({
 	user: 'admin',
 	database: 'evtalk',
 	password: 'qwer1234',
-	port: 3306
+	port: 3306,
+	multipleStatements: true
 });
 db.connect();
 

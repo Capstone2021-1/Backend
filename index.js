@@ -180,7 +180,7 @@ app.get('/getChargingFee', (req, res) => {
 	db.query(non_member, (err1, result1) => {
 		if(err1) res.json(err1);
 		else {
-			var member = 'SELECT busiId, member FROM membership_fee WHERE busiId IN (SELECT membership_id as membership FROM membership_list WHERE user_id=1670808338)';
+			var member = 'SELECT busiId, member FROM membership_fee WHERE busiId IN (SELECT membership_id as membership FROM membership_list WHERE user_id=1670808338);';
 
 			var roaming = 'SELECT MIN(CV) AS CV, MIN(EV) AS EV, MIN(GN) AS GN, MIN(HE) AS HE, MIN(JE) AS JE, MIN(KP) AS KP, MIN(KT) AS KT, MIN(ME) AS ME, MIN(PI) AS PI, MIN(PW) AS PW, MIN(SF) AS SF, MIN(ST) AS ST FROM roaming_fee WHERE membership IN (SELECT membership_id FROM membership_list WHERE user_id=1670808338);';
 			db.query(member + roaming, (err2, results) => {
@@ -190,15 +190,11 @@ app.get('/getChargingFee', (req, res) => {
 						for(var j = 0; j < result1.length; j++) {
 							if(result1[j].busiId == results[0][i].busiId)
 								result1[j].fee = results[0][i].member;
-							else {
-								var busiId = result1[j].busiId;
-								result1[j].fee = results[1][0].busiId;
-							}
 						}
 					}
+					res.json(result1);
 				}
 			})
-			res.json(result1);
 		}
 	})
 })
