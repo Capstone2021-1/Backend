@@ -179,16 +179,14 @@ app.get('/info/car_list', (req, res) => {
 });
 
 app.get('/getChargingFee', (req, res) => {
-	var non_member = 'SELECT busiId, non_member FROM membership_fee';
+	var fee_list = new Object();
+	var non_member = 'SELECT busiId, non_member as fee FROM membership_fee';
 	db.query(non_member, (err1, result1) => {
 		if(err1) res.json(err1);
 		else {
-			var membership = 'SELECT membership_id FROM membership_list WHERE  user_id = ?';
-			db.query(membership, (err2, result2) => {
-				for(var i = 0; i < result2.length; i++) {
-					res.json(i);
-				}
-			})
+			fee_list = result1;
+			for(var i; i < fee_list.length; i++)
+				console.log(fee_list[i]);
 		}
 	})
 })
