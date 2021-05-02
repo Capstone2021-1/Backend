@@ -114,7 +114,7 @@ app.delete(`/delete/:id`, (req, res) => {
 
 app.get('/chargingStation', (req, res) => {
 	console.log('충전소 정보 전송...');
-	var sql = `SELECT * FROM charging_station`;
+	var sql = `SELECT id, name, lng, lat FROM charging_station`;
 	db.query(sql, (err, result) => {
 		if(err) console.log('정보 전송 실패', err);
 		else res.json(result);
@@ -176,6 +176,7 @@ app.get('/info/car_list', (req, res) => {
 });
 
 app.get('/getChargingFee', (req, res) => {
+	console.log("충전 요금 전송 중...");
 	var non_member = 'SELECT busiId, non_member as fee FROM membership_fee';
 	db.query(non_member, (err1, result1) => {
 		if(err1) res.json(err1);
