@@ -16,15 +16,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.get('/', (req, res) => {
-	console.log('서버 접속 완료');
-	res.json('성공');
+	res.json('Hello, EVtalk');
 });
 
 app.post('/login', (req, res) => {
 	var id = req.body.id;
 	var name = req.body.name;
 	var image = req.body.profile_image;
-	console.log(`${name} 님이 로그인 하셨습니다.`);
 	var sql = `SELECT * FROM user WHERE id = ${id}`;
 
 	db.query(sql, (err, result) => {
@@ -113,16 +111,14 @@ app.delete(`/delete/:id`, (req, res) => {
 });
 
 app.get('/chargingStation', (req, res) => {
-	console.log('충전소 정보 전송...');
 	var sql = `SELECT id, name, lng, lat FROM charging_station`;
 	db.query(sql, (err, result) => {
-		if(err) console.log('정보 전송 실패', err);
+		if(err) console.log('충전소 정보 전송 실패', err);
 		else res.json(result);
 	});
 });
 
 app.get(`/userInfo/car`, (req, res) => {
-	console.log('차량 정보 전송...');
 	var id = req.query.id;
 	var sql = `SELECT * FROM car WHERE id = (SELECT car_id FROM user WHERE id=${id})`;
 	db.query(sql, (err, result) => {
@@ -132,7 +128,6 @@ app.get(`/userInfo/car`, (req, res) => {
 });
 
 app.get('/userInfo/membership', (req, res) => {
-	console.log('멤버십 카드 정보 전송...');
 	var id = req.query.id;
 	var sql = `SELECT membership.id as id, card_name, image FROM membership_list INNER JOIN membership on membership_id=membership.id WHERE user_id = ${id}`;
 	db.query(sql, (err, result) => {
@@ -142,7 +137,6 @@ app.get('/userInfo/membership', (req, res) => {
 });
 
 app.get('/userInfo/payment', (req, res) => {
-	console.log('결제 카드 정보 전송...');
 	var id = req.query.id;
 	var sql = `SELECT payment_id as id, card_name, image FROM payment_list INNER JOIN payment on payment_id=payment.id WHERE user_id = ${id}`;
 	db.query(sql, (err, result) => {
@@ -176,7 +170,6 @@ app.get('/info/car_list', (req, res) => {
 });
 
 app.get('/getChargingFee', (req, res) => {
-	console.log("충전 요금 전송 중...");
 	var non_member = 'SELECT busiId, non_member as fee FROM membership_fee';
 	db.query(non_member, (err1, result1) => {
 		if(err1) res.json(err1);
