@@ -1,5 +1,5 @@
-const express = express();
-const db = require('./mysql');
+const express = require('express');
+const db = require('../mysql');
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ router.get('/chargingStation', (req, res) => {
 	});
 });
 
-router.get('/info/membership_list', (req, res) => {
+router.get('/membership', (req, res) => {
 	var sql = 'SELECT * FROM membership';
 	db.query(sql, (err, result) => {
 		if(err) res.json(err);
@@ -23,7 +23,7 @@ router.get('/info/membership_list', (req, res) => {
 	});
 });
 
-router.get('/info/payment_list', (req, res) => {
+router.get('/payment', (req, res) => {
 	var sql = 'SELECT * FROM payment';
 	db.query(sql, (err, result) => {
 		if(err) res.json(err);
@@ -31,7 +31,7 @@ router.get('/info/payment_list', (req, res) => {
 	});
 });
 
-router.get('/info/car_list', (req, res) => {
+router.get('/car', (req, res) => {
 	var sql = 'SELECT enterprise, vehicle_type, image FROM car';
 	db.query(sql, (err, result) => {
 		if(err) res.json(err);
@@ -41,7 +41,7 @@ router.get('/info/car_list', (req, res) => {
 
 var client_id = 'JLVMtPNtATW6dqr4sGCS';
 var client_secret = 'ApyaiBWcdu';
-router.get('/search/charging_station', function (req, res) {
+router.get('/search/charging-station', function (req, res) {
 	var sql = `SELECT id, name, lng, lat FROM charging_station WHERE name LIKE '%${req.query.query}%' OR address LIKE '%${req.query.query}%';`;
 	var totalResult = new Array();
 	db.query(sql, (err, result) => {
@@ -65,7 +65,7 @@ router.get('/search/charging_station', function (req, res) {
 		var temp = JSON.parse(body).items;
 		for(var i = 0; i < temp.length; i++) {
 			var search = new Object();
-			search.iOt = temp[i].title; search.nOa = temp[i].address;
+			search.iOt = (temp[i].title).replace(/(<([^>]+)>)/ig,""); search.nOa = temp[i].address;
 			search.lngOx = temp[i].mapx; search.latOy = temp[i].mapy; search.isChSt = 0;
 			totalResult.push(search);
 		}

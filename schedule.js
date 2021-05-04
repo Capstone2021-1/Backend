@@ -36,3 +36,24 @@ const job = schedule.scheduleJob('0 0 3 * * MON', function () {
 		})
 	});
 });
+
+const light_load = schedule.scheduleJob('0 0 23 * * ?', function() {
+	var sql = `UPDATE membership_fee SET member = light_load WHERE busiId IN ('EP', 'EV', 'GN', 'KL', 'KP', 'MO', 'PW');`;
+	db.query(sql, (err, result) => {
+		console.log('UPDATE light_load');
+	});
+});
+
+const middle_load = schedule.scheduleJob('0 0 9,12,17 * * ?', function() {
+	var sql = `UPDATE membership_fee SET member = middle_load WHERE busiId IN ('EP', 'EV', 'GN', 'KL', 'KP', 'MO', 'PW');`;
+	db.query(sql, (err, result) => {
+		console.log('UPDATE middle_load');
+	});
+});
+
+const maximun_load = schedule.scheduleJob('0 0 10,13 * * ?', function() {
+	var sql = `UPDATE membership_fee SET member = maximum_load WHERE busiId IN ('EP', 'EV', 'GN', 'KL', 'KP', 'MO', 'PW');`;
+	db.query(sql, (err, result) => {
+		console.log('UPDATE maximum_load');
+	});
+});

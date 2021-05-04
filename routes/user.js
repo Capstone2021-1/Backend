@@ -1,5 +1,5 @@
-const express = express();
-const db = require('./mysql');
+const express = require('express');
+const db = require('../mysql');
 
 const router = express.Router();
 
@@ -7,6 +7,7 @@ router.post('/', (req, res) => {
 	var id = req.body.id;
 	var name = req.body.name;
 	var image = req.body.profile_image;
+	console.log(name + '님 로그인');
 	var sql = `SELECT * FROM user WHERE id = ${id}`;
 
 	db.query(sql, (err, result) => {
@@ -153,4 +154,4 @@ router.delete(`/:id`, (req, res) => {
 	});
 });
 
-module.exports = router;
+module.exports = router
