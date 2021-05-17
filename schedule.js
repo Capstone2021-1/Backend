@@ -1,5 +1,5 @@
-const schedule = require('node-schedule');
-var convert = require('xml-js');
+var schedule = require('node-schedule');
+const convert = require('xml-js');
 var request = require('request');
 var db = require('./mysql');
 
@@ -44,14 +44,38 @@ const light_load = schedule.scheduleJob('0 0 23 * * ?', function() {
 	});
 });
 
-const middle_load = schedule.scheduleJob('0 0 9,12,17 * * ?', function() {
+const middle_load1 = schedule.scheduleJob('0 0 9 * * ?', function() {
 	var sql = `UPDATE membership_fee SET member = middle_load WHERE busiId IN ('EP', 'EV', 'GN', 'KL', 'KP', 'MO', 'PW');`;
 	db.query(sql, (err, result) => {
 		console.log('UPDATE middle_load');
 	});
 });
 
-const maximun_load = schedule.scheduleJob('0 0 10,13 * * ?', function() {
+
+const middle_load2 = schedule.scheduleJob('0 0 12 * * ?', function() {
+	var sql = `UPDATE membership_fee SET member = middle_load WHERE busiId IN ('EP', 'EV', 'GN', 'KL', 'KP', 'MO', 'PW');`;
+	db.query(sql, (err, result) => {
+		console.log('UPDATE middle_load');
+	});
+});
+
+
+const middle_load3 = schedule.scheduleJob('0 0 19 * * *', function() {
+	var sql = `UPDATE membership_fee SET member = middle_load WHERE busiId IN ('EP', 'EV', 'GN', 'KL', 'KP', 'MO', 'PW');`;
+	db.query(sql, (err, result) => {
+		console.log('UPDATE middle_load');
+	});
+});
+
+const maximun_load1 = schedule.scheduleJob('0 0 10 * * ?', function() {
+	var sql = `UPDATE membership_fee SET member = maximum_load WHERE busiId IN ('EP', 'EV', 'GN', 'KL', 'KP', 'MO', 'PW');`;
+	db.query(sql, (err, result) => {
+		console.log('UPDATE maximum_load');
+	});
+});
+
+
+const maximun_load2 = schedule.scheduleJob('0 0 13 * * ?', function() {
 	var sql = `UPDATE membership_fee SET member = maximum_load WHERE busiId IN ('EP', 'EV', 'GN', 'KL', 'KP', 'MO', 'PW');`;
 	db.query(sql, (err, result) => {
 		console.log('UPDATE maximum_load');

@@ -3,6 +3,38 @@ const db = require('../mysql');
 
 const router = express.Router();
 
+function userFee(id) {
+	var non_member = 'SELECT busiId, non_member as fee FROM membership_fee';
+	db.query(non_member, (err1, result1) => {
+		if(err1) return err1;
+		else {
+			var member = `SELECT busiId, member FROM membership_fee WHERE busiId IN (SELECT membership_id as membership FROM membership_list WHERE user_id=${id});`;
+
+			var roaming = `SELECT MIN(CV) AS CV, MIN(EV) AS EV, MIN(GN) AS GN, MIN(HE) AS HE, MIN(JE) AS JE, MIN(KP) AS KP, MIN(KT) AS KT, MIN(ME) AS ME, MIN(PI) AS PI, MIN(PW) AS PW, MIN(SF) AS SF, MIN(ST) AS ST, MIN(KL) AS KL FROM roaming_fee WHERE membership IN (SELECT membership_id FROM membership_list WHERE user_id=${id});`;
+			db.query(member + roaming, (err2, results) => {
+				if(err2) return err2;
+				else {
+					for(j in result1) {
+						for(i in results[0]) {
+							if(result1[j].busiId == results[0][i].busiId)
+								result1[j].fee = results[0][i].member;
+						}
+
+						for(i in results[1][0]) {
+							if(result1[j].busiId == i) {
+								if(results[1][0][i] == null);
+								else if(result1[j].fee == null || result1[j].fee > results[1][0][i])
+									result1[j].fee = results[1][0][i];
+							}
+						}
+					}
+					return result1;
+				}
+			})
+		}
+	})
+}
+
 router.post('/', (req, res) => {
 	var id = req.body.id;
 	var name = req.body.name;
@@ -104,6 +136,96 @@ router.get('/fee', (req, res) => {
 	})
 });
 
+router.get('/estimated-charges', (req, res) => {
+var d1 = new Date(new Date(req.query.date1) + 9*60*60*1000);	//충전 시작 시간
+var d2 = new Date(new Date(req.query.date2) + 9*60*60*1000);	//충전 종료 시간
+var charging_hour = (d2 - d1)/1000/60/60;	//충전 시간
+var kwh = req.query.kwh;
+
+var tot_chg = 0;	//총 충전량
+var percent = 0;	//충전 퍼센트
+var energy = `SELECT energy_capacity FROM user, car WHERE car_id = car.id AND user.id=${req.query.id};`;
+db.query(energy, (err, result) => {
+	if(err) console.log(err);
+	else {
+		if(result[0].energy_capacity > kwh*charging_hour) {	//에너지 용량이 충전량보다 많을 경우
+			tot_chg = kwh*charging_hour;
+			percent = (tot_chg/result[0].energy_capacity) * 100;
+		}
+		else {							//에너지 용량보다 충전량이 많거나 같을 경우
+			tot_chg = result[0].energy_capacity;
+			percent = 100;
+			charging_hour = tot_chg / kwh;
+		}
+	}
+	var non_member = 'SELECT busiId, non_member as fee FROM membership_fee';
+	db.query(non_member, (err1, result1) => {
+		if(err1) console.log(err1);
+		else {
+			var member = `SELECT busiId, member FROM membership_fee WHERE busiId IN (SELECT membership_id FROM membership_list WHERE user_id=${req.query.id} AND membership_id NOT IN ('EP', 'EV', 'GN', 'KL', 'KP', 'MO', 'PW'));`;
+
+			var roaming = `SELECT MIN(CV) AS CV, MIN(EV) AS EV, MIN(GN) AS GN, MIN(HE) AS HE, MIN(JE) AS JE, MIN(KP) AS KP, MIN(KT) AS KT, MIN(ME) AS ME, MIN(PI) AS PI, MIN(PW) AS PW, MIN(SF) AS SF, MIN(ST) AS ST, MIN(KL) AS KL FROM roaming_fee WHERE membership IN (SELECT membership_id FROM membership_list WHERE user_id=${req.query.id});`;
+
+			var load = `SELECT busiId, light_load, middle_load, maximum_load FROM membership_fee WHERE busiId IN (SELECT id FROM membership_list INNER JOIN membership on membership_id = id WHERE user_id =${req.query.id} AND id IN ('EP', 'EV', 'GN', 'KL', 'KP', 'MO', 'PW'));`;
+			db.query(member + roaming + load, (err2, results) => {
+				if(err2) console.log(err2);
+				else {
+					for(j in result1) {
+						for(i in results[0])
+							if(result1[j].busiId == results[0][i].busiId)
+								result1[j].fee = results[0][i].member;
+						for(i in results[1][0])
+							if(result1[j].busiId == i) {
+								if(results[1][0][i] == null);
+								else if(result1[j].fee == null || result1[j].fee > results[1][0][i])
+									result1[j].fee = results[1][0][i];
+							}
+					}
+					for(j in result1)
+						result1[j].fee *= tot_chg;
+					if(results[2].length > 0) {
+						var lgt_t = 0; var mid_t = 0; var max_t = 0;
+						while(lgt_t + mid_t + max_t < charging_hour * 60) {
+							var d1_h = d1.getHours();
+							if(23 <= d1_h || d1_h < 9)
+								lgt_t++;
+							else if((10 <= d1_h && d1_h < 12)||(13 <= d1_h && d1_h < 17))
+								max_t++;
+							else
+								mid_t++;
+							d1.setMinutes(d1.getMinutes() + 1);
+						}
+						for(i in result1)
+							for(j in results[2]) 
+								if(result1[i].busiId == results[2][j].busiId)
+									result1[i].fee = kwh * results[2][j].light_load * lgt_t/60 + kwh * results[2][j].middle_load * mid_t/60 + kwh *results[2][j].maximum_load * max_t/60;
+
+					}
+					result1.push({busiId : "charging", fee : tot_chg});
+					result1.push({busiId : "percent", fee : percent});
+					result1.push({busiId : "charging_hour", fee : charging_hour});
+					res.json(result1);
+				}
+			})
+		}
+	})
+	
+});
+});
+
+router.post('/review', (req, res) => {
+	var sql = 'INSERT INTO review(user_id, stat_id, review) VALUES (?, ?, ?);'
+	var params = [req.body.user_id, req.body.stat_id, req.body.review];
+	db.query(sql, params, (err, result) => {
+		if(err) console.log(err);
+		else {
+			console.log(req.body.user_id + '님 리뷰 추가');
+			res.json("리뷰 추가 완료");
+		}
+	});
+
+});
+
 router.put(`/:id`, (req, res) => {
 	var sql = 'UPDATE user SET message=?, car_number=? WHERE id=?';
 	var params = [req.body.message, req.body.car_number, req.params.id];
@@ -153,5 +275,6 @@ router.delete(`/:id`, (req, res) => {
 		else res.send(`${req.params.id} 회원 삭제 완료`);
 	});
 });
+
 
 module.exports = router
