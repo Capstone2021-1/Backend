@@ -11,20 +11,23 @@ queryParams += '&' + encodeURIComponent('zcode') + '=' + encodeURIComponent('11'
 
 
 const job = schedule.scheduleJob('0 0 3 * * MON', function () {
+	console.log("충전소 정보 수정");
 	request({
 		url: url + queryParams,
 		method: 'GET'
 	}, function (error, response, body) {
+		if(error) console.log(error);
 		var xmlToJson = convert.xml2js(body, { compact: true, spaces: 4 });
 		var result = xmlToJson.response.body.items.item;
 		var count = result.length;
 		var sqlDelete = 'DELETE FROM charging_station';
 		db.query(sqlDelete, (err1, result1) => {
-			var sqlInsert1 = `INSERT INTO charging_station(id, name, address, lat, lng) VALUES (?, ?, ?, ?, ?);`;
+			if(err1) console.log(err1);
+			var sqlInsert1 = `INSERT INTO charging_station(id, name, address, lat, lng, limitDetail, note, chgerType) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`;
 			var sqlInsert2 = `INSERT INTO stat_list(statId, busiId) VALUES (?, ?);`;
 			var sqlInsert3 = `INSERT INTO business(id, name, busiCall) VALUES (?, ?, ?)`;
 			for (var i = 0; i < count; i++) {
-				var params1 = [result[i].statId._text, result[i].statNm._text, result[i].addr._text, result[i].lat._text, result[i].lng._text];
+				var params1 = [result[i].statId._text, result[i].statNm._text, result[i].addr._text, result[i].lat._text, result[i].lng._text, result[i].limitDetail._text, result[i].note._text, result[i].chgerType._text];
 				var sqlInsert1s = db.format(sqlInsert1, params1);
 				var params2 = [result[i].statId._text, result[i].busiId._text];
 				var sqlInsert2s = db.format(sqlInsert2, params2);

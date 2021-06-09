@@ -77,6 +77,16 @@ router.get('/', (req, res) => {
 	});
 });
 
+router.post('/saveToken', (req, res) => {
+	var id = req.query.id;
+	var token = req.query.token;
+
+	db.query('UPDATE user SET token = ? WHERE id = ?', [token, id], (err, result) => {
+		if(err) console.log(err);
+		else res.status(200).json({success : true})
+	})
+});
+
 router.get('/car', (req, res) => {
 	var id = req.query.id;
 	var sql = `SELECT * FROM car WHERE id = (SELECT car_id FROM user WHERE id=${id})`;
@@ -223,6 +233,23 @@ router.post('/review', (req, res) => {
 			res.json("리뷰 추가 완료");
 		}
 	});
+
+});
+
+router.get('/getReview', (req, res) => {
+	var sql = 'SELECT count(*) as total FROM review WHERE user_id = ?;'
+	db.query(sql, req.query.id, (err, result) => {
+		if(err) console.log(err)
+		else res.json(result[0]);
+	})
+});
+
+router.delete('/deleteReview', (req, res) => {
+	var sql = 'DELETE FROM review WHERE user_id = ? and stat_id = ? and review = ?;'
+	var params = [req.query.id, req.query.stat_id, req.query.review]
+	db.query(sql, params, (err, result) => {
+		if(err) console.log(err)
+	})
 
 });
 

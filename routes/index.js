@@ -1,6 +1,5 @@
 const express = require('express');
 const db = require('../mysql');
-
 const router = express.Router();
 
 router.get('/', (req, res) => {
@@ -8,7 +7,7 @@ router.get('/', (req, res) => {
 });
 
 router.get('/chargingStation', (req, res) => {
-	var sql = 'SELECT charging_station.id, business.name as busiNm, charging_station.name, lng, lat FROM charging_station, stat_list, business WHERE statId = charging_station.id && busiId = business.id;';
+	var sql = 'SELECT charging_station.id, business.name as busiNm, charging_station.name, lng, lat, chgerType, limitDetail, note FROM charging_station, stat_list, business WHERE statId = charging_station.id && busiId = business.id;';
 	db.query(sql, (err, result) => {
 		if(err) console.log('충전소 정보 전송 실패', err);
 		else res.json(result);
@@ -136,8 +135,46 @@ router.post('/destination', (req, res) => {
 	res.send('목적지 설정 추가');
 });
 
+router.get('/search/person', (req, res) => {
+	var car_number = req.query.car_number;
+	var sql = 'SELECT id, car_number, message, profile_image FROM user WHERE car_number = ?;';
+	db.query(sql, car_number, (err, result) => {
+		if(err) {
+			console.log(err);
+			res.json(err);
+		}
+		else {
+			if(result.length == 1) {
+				console.log(result[0]);
+				res.json(result[0]);
+			} else res.json({id: -1, car_number: car_number, message: "", profile_image: ""});
+		}
+	});
+
+});
+
 router.get('/dett', (req, res) => {
-	res.json(destination);
+	var target_token = 'e8C_zZKeTL66fvDHU-1DVH:APA91bHjr2VC-uJOSZQMRSTWZxo-NapzyPoY6mznj-zKo6WIjTvfZcmJ-Rq0ww2ljcbzOcbr3Vk9nTwf2LTIrr_Jp_G3vrreRl5ZX-_WClAlo9NDOTCOJx-GDSHiTbrkrrzQ369nCyYL';
+
+	var message = {
+		notification: {
+			title: '테스트 데이터 발송',
+			body: '데이터 잘 가나요?',
+		},
+		token: target_token,
+	}
+
+	admin
+	.messaging()
+	.send(message)
+	.then(function (response) {
+		console.log('Successfully sent message: : ', response)
+		return res.status(200).json({success : true})
+	})
+	.catch(function (err) {
+		console.log('Error Sending message!!! : ', err)
+		return res.status(400).json({success : false})
+	});
 })
 
 
